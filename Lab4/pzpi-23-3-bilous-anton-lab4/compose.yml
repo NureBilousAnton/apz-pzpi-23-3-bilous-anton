@@ -1,0 +1,44 @@
+services:
+  database:
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    volumes:
+      - data:/var/lib/postgresql/
+    environment:
+      POSTGRES_DB: data
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d data"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+      args:
+        SEED_DATA: "true"
+    environment:
+      DATABASE_URL: postgres://postgres:password@database:5432/data
+      BIND_ADDRESS: "0.0.0.0:3000"
+      SQLX_OFFLINE: "true"
+      RUST_LOG: info
+      JWT_SECRET: "change-me-in-production"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  caddy:
+    build: .
+    ports:
+      - "80:80"
+      - "3000:3000"
+    depends_on:
+      - server
+
+volumes:
+  data:
