@@ -1,0 +1,8 @@
+.git/
+target/
+.envrc
+rust-toolchain.toml
+rustfmt.toml
+.gitignore
+*.md
+wip/
